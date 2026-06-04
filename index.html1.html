@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>记忆翻牌小游戏</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+    background:linear-gradient(135deg,#fce4ec,#f8bbd0,#f48fb1,#fce4ec);
+    background-size:400% 400%;
+    animation:gradientMove 12s ease infinite;
+    padding:20px;min-height:100vh;
+    position:relative;overflow-x:hidden;
+}
+@keyframes gradientMove{
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+
+/* 飘浮装饰 */
+body::before{
+    content:'🌸💕✨🎀💖🌸✨💕🎀💖✨🌸💕🎀💖';
+    position:fixed;inset:0;z-index:0;
+    font-size:28px;white-space:pre-wrap;
+    word-break:break-all;line-height:2.2;
+    opacity:0.15;pointer-events:none;
+    animation:floatUp 20s linear infinite;
+}
+@keyframes floatUp{
+    0%{transform:translateY(0)}
+    100%{transform:translateY(-60px)}
+}
+
+.wrap{max-width:600px;margin:0 auto;position:relative;z-index:1;}
+
+/* ===== 首页 ===== */
+.home{text-align:center;padding-top:40px;}
+.home h1{
+    font-size:42px;color:#d81b60;margin-bottom:10px;
+    text-shadow:2px 2px 6px rgba(216,27,96,0.25);
+}
+.home .sub{
+    font-size:18px;color:#e91e63;margin-bottom:30px;
+}
+.home .icon-row{
+    font-size:50px;margin-bottom:25px;
+    animation: bounce 1.5s infinite;
+}
+@keyframes bounce{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-15px)}
+}
+#btnStart{
+    padding:16px 60px;font-size:22px;
+    background:linear-gradient(135deg,#f06292,#ec407a);
+    color:#fff;border:none;border-radius:50px;
+    cursor:pointer;box-shadow:0 6px 20px rgba(236,64,122,0.4);
+    transition:transform 0.2s,box-shadow 0.2s;
+    display:block;margin:0 auto 20px;
+}
+#btnStart:hover{
+    transform:scale(1.05);
+    box-shadow:0 8px 28px rgba(236,64,122,0.6);
+}
+
+/* 背景音乐选择区 */
+.bgm-select{
+    margin:20px auto 0;
+    max-width:360px;
+    background:rgba(255,255,255,0.55);
+    border-radius:16px;padding:18px 20px;
+    backdrop-filter:blur(8px);
+}
+.bgm-select .bgm-title{
+    color:#d81b60;font-size:16px;font-weight:bold;
+    margin-bottom:14px;
+}
+.bgm-select .bgm-title::before{content:'🎵 ';}
+.bgm-options{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.bgm-btn{
+    padding:10px 18px;font-size:14px;
+    border:2px solid #f8bbd0;border-radius:25px;
+    background:#fff;color:#d81b60;
+    cursor:pointer;transition:all 0.25s;
+    font-weight:bold;
+}
+.bgm-btn:hover{
+    background:#fce4ec;border-color:#f06292;
+    transform:scale(1.04);
+}
+.bgm-btn.active{
+    background:linear-gradient(135deg,#f06292,#ec407a);
+    color:#fff;border-color:transparent;
+    box-shadow:0 3px 12px rgba(236,64,122,0.35);
+}
+
+/* ===== 选难度页 ===== */
+.menu{text-align:center;margin:30px 0;display:none;}
+.menu h2{color:#d81b60;margin-bottom:30px;font-size:28px;}
+.menu button{
+    padding:14px 28px;margin:0 8px;
+    font-size:17px;border:none;border-radius:10px;
+    cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+.menu button:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,0.2);}
+#e{background:linear-gradient(135deg,#ffb3ba,#ff8a9e);color:#fff;}
+#m{background:linear-gradient(135deg,#f48fb1,#f06292);color:#fff;}
+#h{background:linear-gradient(135deg,#ec407a,#d81b60);color:#fff;}
+
+/* ===== 游戏页 ===== */
+#gameBox{display:none;}
+.top{display:flex;justify-content:space-between;color:#d81b60;margin-bottom:12px;font-weight:bold;}
+#back{
+    padding:5px 12px;border-radius:6px;border:0;cursor:pointer;
+    background:#f8bbd0;color:#d81b60;font-weight:bold;
+}
+.box{display:grid;gap:10px;}
+.card{
+    aspect-ratio:1/1;background:#f48fb1;border-radius:12px;
+    position:relative;transform-style:preserve-3d;
+    transition:0.4s transform;cursor:pointer;
+    box-shadow:0 3px 10px rgba(216,27,96,0.2);
+}
+.card>div{
+    position:absolute;width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:30px;border-radius:12px;backface-visibility:hidden;
+}
+.front{
+    background:linear-gradient(135deg,#ffb3ba,#ffd1dc);
+    border:3px solid #f8bbd0;
+}
+.back{transform:rotateY(180deg);background:#fff0f3;border:3px solid #f8bbd0;}
+.card.open{transform:rotateY(180deg);}
+.pop{
+    display:none;position:fixed;inset:0;
+    background:rgba(216,27,96,0.35);
+    align-items:center;justify-content:center;z-index:100;
+}
+.pop div{
+    background:linear-gradient(135deg,#fff,#fff0f3);
+    padding:35px 45px;border-radius:16px;text-align:center;
+    box-shadow:0 8px 30px rgba(216,27,96,0.3);
+}
+.pop h3{color:#d81b60;margin-bottom:10px;font-size:24px;}
+.pop p{color:#e91e63;margin-bottom:5px;}
+.pop button{
+    margin-top:15px;padding:8px 20px;cursor:pointer;
+    background:linear-gradient(135deg,#f06292,#ec407a);
+    color:#fff;border:none;border-radius:20px;
+    font-size:15px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <!-- ===== 首页 ===== -->
+    <div class="home" id="homeBox">
+        <h1>🧠 记忆翻牌</h1>
+        <p class="sub">翻牌配对，挑战你的记忆力！</p>
+        <div class="icon-row">🃏</div>
+        <button id="btnStart" onclick="goMenu()">开始游戏</button>
+        <div class="bgm-select">
+            <div class="bgm-title">背景音乐</div>
+            <div class="bgm-options">
+                <button class="bgm-btn active" data-bgm="0" onclick="selectBGM(0,this)">🌸 轻快旋律</button>
+                <button class="bgm-btn" data-bgm="1" onclick="selectBGM(1,this)">🎹 梦幻八音盒</button>
+                <button class="bgm-btn" data-bgm="2" onclick="selectBGM(2,this)">🌟 星空漫步</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 选难度页 ===== -->
+    <div class="menu" id="menuBox">
+        <h2>🎯 选择难度</h2>
+        <button id="e">简单 3×4</button>
+        <button id="m">标准 4×4</button>
+        <button id="h">困难 4×5</button>
+    </div>
+
+    <!-- ===== 游戏页 ===== -->
+    <div id="gameBox">
+        <div class="top">
+            <span>配对剩余：<span id="sur"></span></span>
+            <span>步数：<span id="step">0</span></span>
+            <button id="back">返回</button>
+        </div>
+        <div class="box" id="cardBox"></div>
+    </div>
+
+    <!-- ===== 通关弹窗 ===== -->
+    <div class="pop" id="winPop">
+        <div>
+            <h3>🎉 恭喜通关！</h3>
+            <p>总步数：<span id="allStep"></span></p>
+            <button onclick="closePop()">返回选关</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== 音效系统 ==========
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// 播放音调（简单合成器）
+function playTone(freq, type, duration, vol = 0.3) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;          // 'sine','square','triangle','sawtooth'
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+}
+
+// 翻牌音效：清脆的"叮"
+function sfxFlip() {
+    playTone(800, 'sine', 0.12, 0.15);
+    setTimeout(() => playTone(1200, 'sine', 0.10, 0.10), 60);
+}
+
+// 配对成功音效：上升的欢快音
+function sfxMatch() {
+    playTone(523, 'sine', 0.15, 0.2);  // C5
+    setTimeout(() => playTone(659, 'sine', 0.15, 0.2), 100); // E5
+    setTimeout(() => playTone(784, 'sine', 0.20, 0.3), 200); // G5
+}
+
+// 配对失败音效：低沉的"嘟"
+function sfxFail() {
+    playTone(300, 'triangle', 0.20, 0.15);
+    setTimeout(() => playTone(250, 'triangle', 0.25, 0.15), 120);
+}
+
+// 通关音效：胜利旋律
+function sfxWin() {
+    const notes = [523, 587, 659, 698, 784, 880, 988, 1047]; // C大调音阶
+    notes.forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 'sine', 0.3, 0.2), i * 100);
+    });
+}
+
+// ========== 背景音乐系统（三首可选） ==========
+let bgmInterval = null;
+let currentBGM = 0; // 0=轻快旋律, 1=梦幻八音盒, 2=星空漫步
+
+// 三首不同的旋律
+const bgmMelodies = [
+    // 0: 轻快旋律（原版）
+    [
+        { freq: 523, dur: 0.4 }, { freq: 587, dur: 0.4 },
+        { freq: 659, dur: 0.4 }, { freq: 523, dur: 0.4 },
+        { freq: 659, dur: 0.4 }, { freq: 698, dur: 0.4 },
+        { freq: 784, dur: 0.8 },
+        { freq: 392, dur: 0.4 }, { freq: 440, dur: 0.4 },
+        { freq: 523, dur: 0.4 }, { freq: 440, dur: 0.4 },
+        { freq: 523, dur: 0.4 }, { freq: 587, dur: 0.4 },
+        { freq: 659, dur: 0.8 },
+    ],
+    // 1: 梦幻八音盒（高频、清脆、像音乐盒）
+    [
+        { freq: 988, dur: 0.35 }, { freq: 880, dur: 0.35 },
+        { freq: 784, dur: 0.35 }, { freq: 988, dur: 0.35 },
+        { freq: 1175, dur: 0.35 }, { freq: 988, dur: 0.35 },
+        { freq: 880, dur: 0.7 },
+        { freq: 784, dur: 0.35 }, { freq: 659, dur: 0.35 },
+        { freq: 784, dur: 0.35 }, { freq: 880, dur: 0.35 },
+        { freq: 988, dur: 0.35 }, { freq: 784, dur: 0.35 },
+        { freq: 659, dur: 0.7 },
+    ],
+    // 2: 星空漫步（舒缓、悠长、梦幻）
+    [
+        { freq: 330, dur: 0.6 }, { freq: 392, dur: 0.6 },
+        { freq: 440, dur: 0.6 }, { freq: 523, dur: 0.6 },
+        { freq: 587, dur: 0.6 }, { freq: 523, dur: 0.6 },
+        { freq: 440, dur: 1.0 },
+        { freq: 392, dur: 0.6 }, { freq: 330, dur: 0.6 },
+        { freq: 440, dur: 0.6 }, { freq: 523, dur: 0.6 },
+        { freq: 587, dur: 0.6 }, { freq: 659, dur: 0.6 },
+        { freq: 523, dur: 1.0 },
+    ]
+];
+
+const bgmVolumes = [0.06, 0.05, 0.07];       // 不同曲子的音量
+const bgmIntervals = [500, 420, 650];          // 不同曲子的间隔(ms)
+const bgmWaveTypes = ['sine', 'sine', 'triangle']; // 不同曲子的波形
+
+function startBGM() {
+    stopBGM();
+    const melody = bgmMelodies[currentBGM];
+    const vol = bgmVolumes[currentBGM];
+    const interval = bgmIntervals[currentBGM];
+    const wave = bgmWaveTypes[currentBGM];
+    let idx = 0;
+    const playNext = () => {
+        const n = melody[idx];
+        playTone(n.freq, wave, n.dur * 0.8, vol);
+        idx = (idx + 1) % melody.length;
+    };
+    playNext();
+    bgmInterval = setInterval(playNext, interval);
+}
+
+function stopBGM() {
+    if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
+}
+
+// 切换背景音乐
+function selectBGM(index, btn) {
+    ensureAudio();
+    currentBGM = index;
+    // 更新按钮高亮
+    document.querySelectorAll('.bgm-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // 如果正在播放，立刻切换
+    if (bgmInterval || menuBox.style.display !== 'none' || gameBox.style.display !== 'none') {
+        startBGM();
+    }
+}
+
+// 用户首次点击时激活 AudioContext（浏览器策略要求）
+function ensureAudio() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// ========== 游戏逻辑 ==========
+const homeBox=document.getElementById('homeBox');
+const menuBox=document.getElementById('menuBox');
+const gameBox=document.getElementById('gameBox');
+const cardBox=document.getElementById('cardBox');
+const sur=document.getElementById('sur');
+const stepTxt=document.getElementById('step');
+const winPop=document.getElementById('winPop');
+const allStep=document.getElementById('allStep');
+let col=4,row=3;
+let openArr=[],match=0,step=0;
+//一共20种不同水果，每种只用一对（2张），不会出现一个水果四张
+const fruit=['🍌','🍉','🍒','🥥','🍍','🍓','🍑','🥝','🍎','🍐','🍊','🍇','🥭','🍈','🫐','🍋','🥑','🍏','🥜','🌰'];
+
+// 页面切换
+function goMenu(){
+    ensureAudio();
+    homeBox.style.display='none';
+    menuBox.style.display='block';
+    startBGM();  // 进入选难度时就开始播放背景音乐
+}
+
+function goHome(){
+    stopBGM();
+    homeBox.style.display='block';
+    menuBox.style.display='none';
+    gameBox.style.display='none';
+    winPop.style.display='none';
+}
+
+//初始化
+function create(){
+    cardBox.innerHTML='';
+    openArr=[];match=0;step=0;
+    stepTxt.textContent=0;
+    let total=col*row;
+    let arr=[];
+    //按需要数量取不同水果，每种只放2个
+    for(let i=0;i<total/2;i++){
+        let s=fruit[i];
+        arr.push(s,s);
+    }
+    arr.sort(()=>Math.random()-0.5);
+    cardBox.style.gridTemplateColumns=`repeat(${col},1fr)`;
+    sur.textContent=total/2;
+
+    arr.forEach(item=>{
+        let d=document.createElement('div');
+        d.className='card';
+        d.dataset.tag=item;
+        d.innerHTML=`<div class="front">?</div><div class="back">${item}</div>`;
+        d.onclick=click;
+        cardBox.appendChild(d);
+    })
+}
+
+//点卡牌
+function click(e){
+    ensureAudio();
+    let d=e.target.closest('.card');
+    if(d.classList.contains('open')||openArr.length>=2)return;
+    d.classList.add('open');
+    openArr.push(d);
+    step++;
+    stepTxt.textContent=step;
+    sfxFlip();  // 翻牌音效
+
+    if(openArr.length===2){
+        let a=openArr[0],b=openArr[1];
+        if(a.dataset.tag===b.dataset.tag){
+            match++;
+            sur.textContent=(col*row/2)-match;
+            openArr=[];
+            sfxMatch();  // 配对成功音效
+            if(match>=col*row/2){
+                setTimeout(()=>{
+                    allStep.textContent=step;
+                    winPop.style.display='flex';
+                    sfxWin();   // 通关音效
+                    stopBGM();  // 停止背景音乐
+                },300)
+            }
+        }else{
+            sfxFail();  // 配对失败音效
+            setTimeout(()=>{
+                a.classList.remove('open');
+                b.classList.remove('open');
+                openArr=[];
+            },600)
+        }
+    }
+}
+
+//切换页面
+function start(c,r){
+    col=c;row=r;
+    menuBox.style.display='none';
+    gameBox.style.display='block';
+    winPop.style.display='none';
+    create();
+}
+
+function closePop(){
+    winPop.style.display='none';
+    menuBox.style.display='block';
+    gameBox.style.display='none';
+}
+
+document.getElementById('e').onclick=()=>start(4,3);
+document.getElementById('m').onclick=()=>start(4,4);
+document.getElementById('h').onclick=()=>start(5,4);
+document.getElementById('back').onclick=()=>{
+    menuBox.style.display='block';gameBox.style.display='none';
+}
+</script>
+</body>
+</html>
