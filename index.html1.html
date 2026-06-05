@@ -96,6 +96,43 @@ body::before{
     box-shadow:0 3px 12px rgba(236,64,122,0.35);
 }
 
+/* ===== 游戏玩法页 ===== */
+.rules{text-align:center;padding-top:30px;display:none;}
+.rules h2{color:#d81b60;margin-bottom:25px;font-size:28px;}
+.rules-card{
+    background:rgba(255,255,255,0.7);
+    border-radius:20px;padding:30px 25px;
+    max-width:440px;margin:0 auto 25px;
+    text-align:left;
+    box-shadow:0 4px 20px rgba(216,27,96,0.15);
+    backdrop-filter:blur(6px);
+}
+.rules-card .step{
+    display:flex;align-items:flex-start;gap:12px;
+    margin-bottom:20px;
+}
+.rules-card .step:last-child{margin-bottom:0;}
+.rules-card .step .num{
+    width:32px;height:32px;min-width:32px;
+    background:linear-gradient(135deg,#f06292,#ec407a);
+    color:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:bold;font-size:16px;
+}
+.rules-card .step .txt{color:#d81b60;font-size:15px;line-height:1.7;padding-top:3px;}
+.rules-card .step .txt b{color:#c2185b;}
+#btnGoMenu{
+    padding:14px 50px;font-size:20px;
+    background:linear-gradient(135deg,#f06292,#ec407a);
+    color:#fff;border:none;border-radius:50px;
+    cursor:pointer;box-shadow:0 6px 20px rgba(236,64,122,0.4);
+    transition:transform 0.2s,box-shadow 0.2s;
+}
+#btnGoMenu:hover{
+    transform:scale(1.05);
+    box-shadow:0 8px 28px rgba(236,64,122,0.6);
+}
+
 /* ===== 选难度页 ===== */
 .menu{text-align:center;margin:30px 0;display:none;}
 .menu h2{color:#d81b60;margin-bottom:30px;font-size:28px;}
@@ -162,7 +199,7 @@ body::before{
         <h1>🧠 记忆翻牌</h1>
         <p class="sub">翻牌配对，挑战你的记忆力！</p>
         <div class="icon-row">🃏</div>
-        <button id="btnStart" onclick="goMenu()">开始游戏</button>
+        <button id="btnStart" onclick="goRules()">开始游戏</button>
         <div class="bgm-select">
             <div class="bgm-title">背景音乐</div>
             <div class="bgm-options">
@@ -171,6 +208,30 @@ body::before{
                 <button class="bgm-btn" data-bgm="2" onclick="selectBGM(2,this)">🌟 星空漫步</button>
             </div>
         </div>
+    </div>
+
+    <!-- ===== 游戏玩法页 ===== -->
+    <div class="rules" id="rulesBox">
+        <h2>📖 游戏玩法</h2>
+        <div class="rules-card">
+            <div class="step">
+                <div class="num">1</div>
+                <div class="txt">点击卡牌将其<b>翻开</b>，看到背面的水果图案</div>
+            </div>
+            <div class="step">
+                <div class="num">2</div>
+                <div class="txt">记住每张牌的位置，<b>连续翻开两张</b>相同的牌即可配对成功</div>
+            </div>
+            <div class="step">
+                <div class="num">3</div>
+                <div class="txt">如果两张牌不同，它们会<b>自动翻回</b>，请记住它们的位置</div>
+            </div>
+            <div class="step">
+                <div class="num">4</div>
+                <div class="txt">用<b>最少的步数</b>将所有卡牌配对完成即可通关！</div>
+            </div>
+        </div>
+        <button id="btnGoMenu" onclick="goMenu()">我知道了，选难度</button>
     </div>
 
     <!-- ===== 选难度页 ===== -->
@@ -196,7 +257,11 @@ body::before{
         <div>
             <h3>🎉 恭喜通关！</h3>
             <p>总步数：<span id="allStep"></span></p>
-            <button onclick="closePop()">返回选关</button>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <button onclick="replay()">🔄 再来一次</button>
+                <button onclick="closePop()">🎯 重新选难度</button>
+                <button onclick="goHome()">🏠 返回首页</button>
+            </div>
         </div>
     </div>
 </div>
@@ -331,6 +396,7 @@ function ensureAudio() {
 
 // ========== 游戏逻辑 ==========
 const homeBox=document.getElementById('homeBox');
+const rulesBox=document.getElementById('rulesBox');
 const menuBox=document.getElementById('menuBox');
 const gameBox=document.getElementById('gameBox');
 const cardBox=document.getElementById('cardBox');
@@ -344,16 +410,25 @@ let openArr=[],match=0,step=0;
 const fruit=['🍌','🍉','🍒','🥥','🍍','🍓','🍑','🥝','🍎','🍐','🍊','🍇','🥭','🍈','🫐','🍋','🥑','🍏','🥜','🌰'];
 
 // 页面切换
-function goMenu(){
+function goRules(){
     ensureAudio();
     homeBox.style.display='none';
+    rulesBox.style.display='block';
+    menuBox.style.display='none';
+    startBGM();
+}
+
+function goMenu(){
+    rulesBox.style.display='none';
     menuBox.style.display='block';
-    startBGM();  // 进入选难度时就开始播放背景音乐
+    gameBox.style.display='none';
+    winPop.style.display='none';
 }
 
 function goHome(){
     stopBGM();
     homeBox.style.display='block';
+    rulesBox.style.display='none';
     menuBox.style.display='none';
     gameBox.style.display='none';
     winPop.style.display='none';
@@ -435,6 +510,13 @@ function closePop(){
     winPop.style.display='none';
     menuBox.style.display='block';
     gameBox.style.display='none';
+}
+
+function replay(){
+    winPop.style.display='none';
+    gameBox.style.display='block';
+    create();
+    startBGM();
 }
 
 document.getElementById('e').onclick=()=>start(4,3);
